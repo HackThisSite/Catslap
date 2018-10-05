@@ -1,0 +1,130 @@
+{
+
+  # Production server settings
+  # More details on available options: http://mojolicious.org/perldoc/Mojo/Server/Hypnotoad#SETTINGS
+  hypnotoad => {
+
+    listen => ['http://*:31195'],
+
+  },
+
+  app => {
+
+    log_dir => '/path/to/logs/',
+
+    # Values: fatal, error, warn, info, debug
+    # Default: info
+    log_level => 'info',
+
+    # Client remote IP address source, searched in order from left to right and matched
+    # on first defined value found, either by HTTP header (X-Real-IP or X-Forwarded-For
+    # only), or direct remote address ("tx").
+    # Valid values (lowercase only): x-real-ip, x-forwarded-for, tx
+    # Default: tx
+    remote_addr_sources => [
+
+      'tx',
+
+    ],
+
+    default_language => 'en',
+
+  },
+
+  ldap => {
+
+    servers => [
+
+      'ldap://localhost:389',
+
+    ],
+
+    cacert => '/path/to/ca-cert.crt',
+
+    # The first defined bind RDN here is considered the default when client requests
+    # do not (or cannot) define an admin bind RDN to use, and is also given the alias
+    # ID of 'default'.
+    #
+    # When an admin bind RDN is defined in a client request, the first matching
+    # bind RDN is used that matches the ID (if defined), or the whole bind RDN string.
+    admins => [
+
+      {
+
+        # (Optional)
+        id => 'admin1',
+
+        rdn => 'cn=admin1,ou=service-accounts,dc=example,dc=com',
+
+        password => 'Adm1nPassw0rd',
+
+        # If defined, only these clients may use this admin bind-dn
+        allow_clients => [
+
+          'nodejs-app-1',
+          'python-app-1',
+
+        ],
+
+      },
+
+    ],
+
+  },
+
+  clients => [
+
+    {
+
+      name => 'nodejs-app-1',
+
+      token => 'really-loooong-token-aaaaaaaaaaaaaabbbbbbbbbbbcccccccccccccccc',
+
+      # Default: ['0.0.0.0/0']
+      allow_from => [
+
+        '0.0.0.0/0',
+
+      ],
+
+      # Default: default
+      use_admin => 'default',
+
+      acl => {
+
+        # Default: 1
+        can_choose_admin => 0,
+
+        # Default: 1
+        can_bind => 1,
+
+        # Default: 0
+        can_search => 0,
+
+        # Overrides 'can_search'
+        # Default: 0
+        can_search_as_admin => 0,
+
+        # Default: 0
+        can_add => 0,
+
+        # Default: 0
+        can_modify => 0,
+
+        # Overrides 'can_modify'
+        # Default: 0
+        can_modify_as_admin => 0,
+
+        # Default: 0
+        can_delete => 0,
+
+        # Default: 0
+        can_view_admins => 0,
+
+      },
+
+    },
+
+  ],
+
+};

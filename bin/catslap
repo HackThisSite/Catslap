@@ -1,0 +1,104 @@
+#!/usr/bin/env perl
+use Mojo::Base -strict;
+use Mojo::Server::Morbo;
+use Mojo::Server::Hypnotoad;
+use Mojo::Util qw(extract_usage getopt);
+use FindBin;
+
+my $app = "$FindBin::Bin/../app.pl";
+
+# Development mode
+if (defined $ENV{CATSLAP} && uc(substr($ENV{CATSLAP},0,3)) eq 'DEV') {
+  getopt
+    'b|backend=s' => \$ENV{MOJO_MORBO_BACKEND},
+    'h|help'      => \my $help,
+    'l|listen=s'  => \my @listen,
+    'm|mode=s'    => \$ENV{MOJO_MODE},
+    'v|verbose'   => \$ENV{MORBO_VERBOSE},
+    'w|watch=s'   => \my @watch;
+
+  die extract_usage if $help;
+  print "NOTICE: Starting Catslap in development mode ...\n";
+  my $morbo = Mojo::Server::Morbo->new;
+  if (@listen) {
+    $morbo->daemon->listen(\@listen) if @listen;
+  } else {
+    $ENV{MOJO_LISTEN} = 'http://*:31195';
+  }
+  if (@watch) {
+    $morbo->backend->watch(\@watch);
+    print 'Watching for changes: '.join(' ', @watch)."\n";
+  }
+  $morbo->run($app);
+
+# Production mode
+} else {
+  getopt
+    'f|foreground' => \$ENV{HYPNOTOAD_FOREGROUND},
+    'h|help'       => \my $help,
+    's|stop'       => \$ENV{HYPNOTOAD_STOP},
+    't|test'       => \$ENV{HYPNOTOAD_TEST};
+
+  die extract_usage if $help;
+  Mojo::Server::Hypnotoad->new->run($app);
+}
+
+=encoding utf8
+
+=head1 NAME
+
+catslap - LDAP REST microservice with Password Policy overlay support
+
+=head1 SYNOPSIS
+
+  Usage: catslap [OPTIONS]
+
+    catslap
+    catslap -f
+    CATSLAP=DEV catslap -m production -l http://[::]:31195 -l https://*:31196
+    CATSLAP=DEV catslap -l 'https://*:31196?cert=./server.crt&key=./server.key'
+    CATSLAP=DEV catslap -w lib -w catslap.conf
+
+  Production Server Options:
+    -f, --foreground   Keep manager process in foreground
+    -h, --help         Show this message
+    -s, --stop         Stop server gracefully
+
+  Development Server Options:
+    -b, --backend <name>           Morbo backend to use for reloading, defaults
+                                   to "Poll"
+    -h, --help                     Show this message
+    -l, --listen <location>        One or more locations you want to listen on,
+                                   defaults to the value of MOJO_LISTEN or
+                                   "http://*:31195"
+    -m, --mode <name>              Operating mode for your application,
+                                   defaults to the value of
+                                   MOJO_MODE/PLACK_ENV or "development"
+    -v, --verbose                  Print details about what files changed to
+                                   STDOUT
+    -w, --watch <directory/file>   One or more directories and files to watch
+                                   for changes, defaults to the application
+                                   script as well as the "lib" and "templates"
+                                   directories in the current working
+                                   directory
+
+  Production & Development Server
+
+    The Catslap production server is powered by the Mojolicious Hypnotoad web
+    server.
+
+    The Catslap development server is powered by the Mojolicious Morbo web server.
+    In order to enable the development server, you must set the CATSLAP
+    environment variable to "DEV".
+
+=head1 DESCRIPTION
+
+Start the Catslap L<Mojolicious> application with the
+L<Hypnotoad|Mojo::Server::Hypnotoad> production or
+L<Hypnotoad|Mojo::Server::Morbo> development web server.
+
+=head1 SEE ALSO
+
+L<https://github.com/HackThisSite/Catslap>, L<https://hackthissite.org>, L<Mojolicious>.
+
+=cut
